@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "truemargin-mcp"
+version = "1.0.0"
+description = "Zero-dependency MCP server for 1688 primary factory matching, GBK search encoding, and TikTok Shop / Amazon FBA net-margin auditing."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [
+  { name = "AI True Labs", email = "support@aitruelabs.com" }
+]
+keywords = ["mcp", "1688", "ecommerce", "tiktok-shop", "amazon-fba", "shopify", "dropshipping", "sourcing", "model-context-protocol"]
+dependencies = []
+
+[project.urls]
+Homepage = "https://truemargin.aitruelabs.com"
+Repository = "https://github.com/yixuanrobot/truemargin-mcp"
+ApifyActor = "https://apify.com/aitruelabs/truemargin-1688-profit-scout"
+
+[project.scripts]
+truemargin-mcp = "truemargin_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["truemargin_mcp*"]

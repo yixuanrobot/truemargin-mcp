@@ -1,0 +1,14 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      licenseKey:
+        type: string
+        description: Optional TrueMargin Pro License Key from https://truemargin.aitruelabs.com
+  commandFunction: |-
+    (config) => ({
+      command: 'python3',
+      args: ['-m', 'truemargin_mcp'],
+      env: config && config.licenseKey ? { TRUEMARGIN_LICENSE_KEY: config.licenseKey } : {}
+    })

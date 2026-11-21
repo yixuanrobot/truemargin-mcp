@@ -87,6 +87,8 @@ def compute_unit_economics(
 
     landed_cogs_usd = factory_usd + china_inland_qc_usd + intl_freight_usd
 
+    r = max(0.0, min(1.0, expected_refund_rate_pct / 100.0))
+
     last_mile_usd = rate_cfg["last_mile_usd"]
     affiliate_usd = 0.0
 
@@ -94,8 +96,10 @@ def compute_unit_economics(
         # TikTok Shop US ~6% referral fee + creator affiliate %
         platform_fee_usd = retail_price_usd * 0.06
         affiliate_usd = retail_price_usd * (creator_affiliate_pct / 100.0)
-        # Refund penalty: TikTok retains ~20% of referral fee + unrecovered landed COGS/shipping on ~65% of impulse returns
-        loss_if_returned = (landed_cogs_usd + last_mile_usd) * 0.75 + (platform_fee_usd * 0.20)
+        # Refunded order: $0 revenue kept, creator affiliate clawed back ($0),
+        # TikTok retains ~20% refund admin fee (capped at $5.00), ~75% landed COGS + last-mile unrecovered
+        refund_admin_fee = min(platform_fee_usd * 0.20, 5.00)
+        unrecoverable_cogs_and_ship = landed_cogs_usd * 0.75 + last_mile_usd
     elif sales_channel == "amazon_fba_us":
         platform_fee_usd = retail_price_usd * 0.15
         # Override last-mile with FBA Pick & Pack fee tiered by weight
@@ -107,23 +111,26 @@ def compute_unit_economics(
             last_mile_usd = 5.65 + max(0.0, billed_kg - 0.50) * 1.60
         # Amazon FBA doesn't use TikTok creator affiliate by default unless external traffic
         affiliate_usd = retail_price_usd * (creator_affiliate_pct / 100.0) * 0.25
-        loss_if_returned = (landed_cogs_usd * 0.55) + last_mile_usd + (platform_fee_usd * 0.20)
+        refund_admin_fee = min(platform_fee_usd * 0.20, 5.00)
+        unrecoverable_cogs_and_ship = landed_cogs_usd * 0.55 + last_mile_usd
     else:
-        # Shopify DTC: ~3.9% MoR / Card blended + $0.40 fixed
+        # Shopify DTC: ~3.9% MoR / Card blended + $0.40 fixed (gateway fee is NOT refunded on returns)
         platform_fee_usd = retail_price_usd * 0.039 + 0.40
         affiliate_usd = retail_price_usd * (creator_affiliate_pct / 100.0) * 0.30
-        loss_if_returned = (landed_cogs_usd + last_mile_usd) * 0.70 + 0.40
+        refund_admin_fee = platform_fee_usd
+        unrecoverable_cogs_and_ship = landed_cogs_usd * 0.70 + last_mile_usd
 
-    refund_loss_usd = (expected_refund_rate_pct / 100.0) * loss_if_returned
-
-    gross_before_ads = (
+    kept_contribution = (
         retail_price_usd
         - landed_cogs_usd
         - last_mile_usd
         - platform_fee_usd
         - affiliate_usd
-        - refund_loss_usd
     )
+    loss_on_refunded_order = unrecoverable_cogs_and_ship + refund_admin_fee
+
+    gross_before_ads = (1.0 - r) * kept_contribution - r * loss_on_refunded_order
+    effective_refund_impact = r * (kept_contribution + loss_on_refunded_order)
     net_profit = gross_before_ads - ad_spend_cpa_usd
     net_margin_pct = (net_profit / retail_price_usd * 100.0) if retail_price_usd > 0 else -100.0
 
@@ -168,7 +175,7 @@ def compute_unit_economics(
         platform_referral_fee_usd=round(platform_fee_usd, 2),
         creator_affiliate_fee_usd=round(affiliate_usd, 2),
         fba_or_lastmile_fee_usd=round(last_mile_usd, 2),
-        refund_rto_loss_usd=round(refund_loss_usd, 2),
+        refund_rto_loss_usd=round(effective_refund_impact, 2),
         ad_and_sample_cpa_usd=round(ad_spend_cpa_usd, 2),
         net_profit_usd=round(net_profit, 2),
         net_margin_pct=round(net_margin_pct, 2),

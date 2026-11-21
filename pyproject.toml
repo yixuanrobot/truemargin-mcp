@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "truemargin-mcp"
-version = "1.0.0"
+version = "0.1.2"
 description = "Zero-dependency MCP server for 1688 primary factory matching, GBK search encoding, and TikTok Shop / Amazon FBA net-margin auditing."
 readme = "README.md"
 license = { text = "MIT" }

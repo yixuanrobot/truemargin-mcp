@@ -154,7 +154,7 @@ def handle_rpc_request(req: Dict[str, Any]) -> Dict[str, Any]:
             "result": {
                 "protocolVersion": supported,
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "truemargin-1688-scout", "version": "1.0.0"},
+                "serverInfo": {"name": "truemargin-1688-scout", "version": "0.1.2"},
             },
         }
 
